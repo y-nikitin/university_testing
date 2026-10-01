@@ -26,6 +26,46 @@ Python 3.12+, PostgreSQL 17, psycopg 3, pytest. Це окрема система
 
 Репозиторії мають створення, читання, зміну та видалення. Відсутній запис — None; оновлення відсутнього запису — ValueError, видалення — без змін. `find_orders(product_id, status)` фільтрує одночасно за товаром і статусом, повертає записи за зростанням id або порожній список. Видалення замовлення видаляє його позицію; товар із позиціями видалити не можна.
 
+## HTTP-перевірка купона
+
+Готовий `store.http_coupon_validator.HttpCouponValidator` реалізує контракт CouponValidator через HTTP. Використовує стандартну бібліотеку Python без додаткових залежностей.
+
+```python
+from store.http_coupon_validator import HttpCouponValidator
+from store.service import OrderService
+
+coupons = HttpCouponValidator(base_url=wiremock_url, timeout=2)
+service = OrderService(products, orders, coupons)
+```
+
+wiremock_url — адреса контейнера, отримана під час його запуску: http/https, host і фактичний опублікований порт, без шляху, параметрів та облікових даних. timeout — додатне скінченне число секунд очікування мережевих операцій, не загальний ліміт бізнес-сценарію.
+
+Лише за coupon_claimed=True, після локальних перевірок, виконується один запит:
+
+```http
+POST /coupon-validation
+Content-Type: application/json
+```
+
+```json
+{"productId": 1, "quantity": 2}
+```
+
+Очікується HTTP 200 і JSON-об’єкт:
+
+```json
+{"valid": true}
+```
+
+- true: у БД зберігається coupon_valid=True; від початкової суми 1200 грн включно застосовується знижка 15%. Нижче порога купон зберігається підтвердженим, але знижки немає;
+- false: замовлення створюється без знижки, coupon_valid=False;
+- HTTP-статус, відмінний від 200, мережева помилка, таймаут, некоректний JSON, відсутнє або нелогічне valid: CouponValidationError, без запису замовлення;
+- "true", 1 і null не є логічним результатом; додаткові поля відповіді ігноруються;
+- за coupon_claimed=False, при локальній відмові та return_order HTTP не викликається;
+- повторів і переходів за HTTP-перенаправленнями немає; з’єднання закривається після виклику.
+
+Адаптер не запускає WireMock. Контейнери PostgreSQL і WireMock, застосування міграцій, налаштування відповідей, перевірки БД та журналу HTTP і очищення між тестами налаштовує студент. Звичайний Stub/Mock для CouponValidator також підтримується.
+
 ## Підготовка і запуск
 
 Із цієї папки:

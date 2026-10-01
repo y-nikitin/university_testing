@@ -136,13 +136,7 @@ class BookingIntegrationTest {
         assertEquals(240_000, stored.total());
         assertEquals(created, stored);
         verify(policy).isAllowed(room, 2, 2);
-        verifyNoMoreInteractions(policy);є
-                є
-                \\
-
-        \
-
-        
+        verifyNoMoreInteractions(policy);
     }
 
     @Test
