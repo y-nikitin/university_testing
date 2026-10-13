@@ -3,6 +3,7 @@ package hotel;
 import java.sql.SQLException;
 import java.util.Objects;
 
+@org.springframework.stereotype.Service
 public final class BookingService {
     private final RoomRepository rooms;
     private final BookingRepository bookings;
@@ -24,7 +25,7 @@ public final class BookingService {
                 || roomId <= 0 || nights < 1 || nights > 30 || guests < 1 || guests > 4)
             throw new IllegalArgumentException("Некоректні дані бронювання");
         Room room = rooms.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("Номер не знайдено"));
+                .orElseThrow(() -> new ResourceNotFoundException("Номер не знайдено"));
         if (guests > room.capacity()) throw new BookingRejectedException("Перевищено місткість номера");
         if (!policy.isAllowed(room, nights, guests)) throw new BookingRejectedException("Бронювання не дозволено");
         long base = room.nightlyPrice() * nights;
@@ -36,9 +37,9 @@ public final class BookingService {
     public Booking cancelBooking(long id) throws SQLException {
         if (id <= 0) throw new IllegalArgumentException("Некоректний ідентифікатор");
         Booking booking = bookings.findById(id);
-        if (booking == null) throw new IllegalArgumentException("Бронювання не знайдено");
+        if (booking == null) throw new ResourceNotFoundException("Бронювання не знайдено");
         if (booking.status() == BookingStatus.CANCELLED)
-            throw new IllegalStateException("Бронювання вже скасовано");
+            throw new BookingRejectedException("Бронювання вже скасовано");
         bookings.updateStatus(id, BookingStatus.CANCELLED);
         return new Booking(booking.id(), booking.reference(), booking.roomId(), booking.nights(),
                 booking.guests(), booking.total(), BookingStatus.CANCELLED);

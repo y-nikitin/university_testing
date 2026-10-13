@@ -1,3 +1,4 @@
 package hotel;
 
-public record BookingRequest(String reference, long roomId, int nights, int guests) {}
+public record BookingRequest(String reference, long roomId, int nights, int guests) {
+}
