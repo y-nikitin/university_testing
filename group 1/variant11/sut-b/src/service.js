@@ -1,6 +1,7 @@
 "use strict";
 const { Enrollment, EnrollmentRequest, EnrollmentStatus: S } = require("./models");
 const { integer, EnrollmentRejectedError } = require("./validation");
+class ResourceNotFoundError extends RangeError {}
 class EnrollmentService {
     constructor(students, courses, enrollments, policy) {
         if (!students || !courses || !enrollments || !policy) throw new TypeError("Усі залежності обов'язкові");
@@ -16,9 +17,9 @@ class EnrollmentService {
             throw new RangeError("Код заявки має містити 1–40 символів");
         integer(request.studentId, 1, Number.MAX_SAFE_INTEGER); integer(request.courseId, 1, Number.MAX_SAFE_INTEGER);
         const student = await this.students.findById(request.studentId);
-        if (!student) throw new RangeError("Слухача не знайдено");
+        if (!student) throw new ResourceNotFoundError("Слухача не знайдено");
         const course = await this.courses.findById(request.courseId);
-        if (!course) throw new RangeError("Курс не знайдено");
+        if (!course) throw new ResourceNotFoundError("Курс не знайдено");
         integer(course.price, 100, 10000000); integer(course.capacity, 1, 100);
         if (await this.enrollments.hasEnrollment(student.id, course.id)) throw new EnrollmentRejectedError("Слухача вже зараховано або він завершив курс");
         if (await this.enrollments.countOccupied(course.id) >= course.capacity) throw new EnrollmentRejectedError("Вільних місць немає");
@@ -44,9 +45,9 @@ class EnrollmentService {
     async active(id) {
         integer(id, 1, Number.MAX_SAFE_INTEGER);
         const enrollment = await this.enrollments.findById(id);
-        if (!enrollment) throw new RangeError("Заявку не знайдено");
+        if (!enrollment) throw new ResourceNotFoundError("Заявку не знайдено");
         if (enrollment.status !== S.ENROLLED) throw new EnrollmentRejectedError("Зміна статусу заборонена");
         return enrollment;
     }
 }
-module.exports = { EnrollmentService, EnrollmentRejectedError };
+module.exports = { EnrollmentService, EnrollmentRejectedError, ResourceNotFoundError };

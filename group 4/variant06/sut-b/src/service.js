@@ -1,5 +1,6 @@
 "use strict";
 const { Order, OrderItem, OrderStatus, OrderRequest } = require("./models");
+class ResourceNotFoundError extends RangeError {}
 class OrderRejectedError extends Error {}
 function integer(value, min, max, field) {
     if (!Number.isSafeInteger(value) || value < min || value > max) throw new RangeError("Некоректне значення: " + field);
@@ -24,7 +25,7 @@ class OrderService {
         integer(request.quantity,1,20,"Кількість");
         if (typeof request.premium !== "boolean") throw new TypeError("Некоректна ознака преміальності");
         const product = await this.products.findById(request.productId);
-        if (!product) throw new RangeError("Товар не знайдено");
+        if (!product) throw new ResourceNotFoundError("Товар не знайдено");
         const limit = request.premium ? 10 : 6;
         if (request.quantity > limit) throw new OrderRejectedError("Перевищено ліміт кількості");
         if (request.quantity > product.stock) throw new OrderRejectedError("Недостатньо товару");
@@ -40,11 +41,11 @@ class OrderService {
         integer(daysSincePurchase,0,36500,"Дні після покупки");
         if (typeof packagingOpen !== "boolean") throw new TypeError("Некоректна ознака пакування");
         const order = await this.orders.findById(id);
-        if (!order) throw new RangeError("Замовлення не знайдено");
+        if (!order) throw new ResourceNotFoundError("Замовлення не знайдено");
         if (order.status === OrderStatus.RETURNED) throw new OrderRejectedError("Замовлення вже повернено");
         if (daysSincePurchase > 5 || order.item.onSale) throw new OrderRejectedError("Повернення не дозволене");
         await this.orders.updateStatus(id,OrderStatus.RETURNED);
         return new Order(order.id,order.reference,order.premium,order.couponValid,order.total,OrderStatus.RETURNED,order.item);
     }
 }
-module.exports = { OrderService, OrderRejectedError };
+module.exports = { OrderService, OrderRejectedError, ResourceNotFoundError };

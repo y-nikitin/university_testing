@@ -1,5 +1,8 @@
 using System;
 namespace Rental;
+public class ResourceNotFoundException : ArgumentException {
+    public ResourceNotFoundException(string message) : base(message) { }
+}
 public class RentalRejectedException : Exception {
     public RentalRejectedException(string message) : base(message) { }
 }
@@ -27,7 +30,7 @@ public class RentalService {
         if (request == null || string.IsNullOrWhiteSpace(request.Reference) || request.Reference.Length > 40 || request.EquipmentId <= 0)
             throw new ArgumentException("Некоректна заявка");
         Validate(100, request.Quantity, request.Days);
-        var item = equipment.FindById(request.EquipmentId) ?? throw new ArgumentException("Обладнання не знайдено");
+        var item = equipment.FindById(request.EquipmentId) ?? throw new ResourceNotFoundException("Обладнання не знайдено");
         if (request.Quantity > item.Stock) throw new RentalRejectedException("Недостатньо обладнання");
         if (!policy.IsAllowed(item, request.Quantity, request.Days)) throw new RentalRejectedException("Оренду не дозволено");
         long total = CalculateTotal(item.DailyRate, request.Quantity, request.Days);
@@ -36,7 +39,7 @@ public class RentalService {
     }
     public RentalOrder ReturnRental(long id, int overdueDays) {
         if (id <= 0 || overdueDays < 0 || overdueDays > 36500) throw new ArgumentException("Некоректні параметри повернення");
-        var rental = rentals.FindById(id) ?? throw new ArgumentException("Оренду не знайдено");
+        var rental = rentals.FindById(id) ?? throw new ResourceNotFoundException("Оренду не знайдено");
         if (rental.Status == RentalStatus.Returned) throw new RentalRejectedException("Оренду вже повернено");
         long fee = CalculateLateFee(rental.Item.DailyRate, rental.Item.Quantity, rental.Days, overdueDays);
         rentals.MarkReturned(id, fee);

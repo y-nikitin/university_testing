@@ -2,6 +2,9 @@ from dataclasses import replace
 from .models import Enrollment, EnrollmentRequest, EnrollmentStatus as S
 from .ports import StudentRepository, CourseRepository, EnrollmentRepository, EnrollmentPolicy
 
+class ResourceNotFoundError(ValueError):
+    pass
+
 class EnrollmentRejectedError(Exception):
     pass
 
@@ -47,10 +50,10 @@ class EnrollmentService:
         boolean(request.coupon_valid)
         student = self.students.find_by_id(request.student_id)
         if student is None:
-            raise ValueError("Слухача не знайдено")
+            raise ResourceNotFoundError("Слухача не знайдено")
         course = self.courses.find_by_id(request.course_id)
         if course is None:
-            raise ValueError("Курс не знайдено")
+            raise ResourceNotFoundError("Курс не знайдено")
         integer(course.capacity, 1, 100)
         total = self.calculate_total(course.price, student.regular, request.coupon_valid)
         if self.enrollments.has_enrollment(student.id, course.id):
@@ -81,7 +84,7 @@ class EnrollmentService:
         integer(enrollment_id, 1, 2**63 - 1)
         enrollment = self.enrollments.find_by_id(enrollment_id)
         if enrollment is None:
-            raise ValueError("Заявку не знайдено")
+            raise ResourceNotFoundError("Заявку не знайдено")
         if enrollment.status != S.ENROLLED:
             raise EnrollmentRejectedError("Зміна статусу заборонена")
         return enrollment

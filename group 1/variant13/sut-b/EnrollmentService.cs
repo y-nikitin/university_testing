@@ -21,8 +21,8 @@ public class EnrollmentService {
     public Enrollment Enroll(EnrollmentRequest request) {
         if (request == null || string.IsNullOrWhiteSpace(request.Reference) || request.Reference.Length > 40 || request.StudentId <= 0 || request.CourseId <= 0)
             throw new ArgumentException("Некоректна заявка");
-        var student = students.FindById(request.StudentId) ?? throw new ArgumentException("Слухача не знайдено");
-        var course = courses.FindById(request.CourseId) ?? throw new ArgumentException("Курс не знайдено");
+        var student = students.FindById(request.StudentId) ?? throw new ResourceNotFoundException("Слухача не знайдено");
+        var course = courses.FindById(request.CourseId) ?? throw new ResourceNotFoundException("Курс не знайдено");
         if (course.Capacity < 1 || course.Capacity > 100) throw new ArgumentException("Некоректна місткість");
         long prepaid = CalculatePrepayment(course.Price, student.Regular);
         if (enrollments.HasEnrollment(student.Id, course.Id)) throw new EnrollmentRejectedException("Слухача вже зараховано або він завершив курс");
@@ -42,7 +42,7 @@ public class EnrollmentService {
     }
     private Enrollment Active(long id) {
         if (id <= 0) throw new ArgumentOutOfRangeException(nameof(id));
-        var enrollment = enrollments.FindById(id) ?? throw new ArgumentException("Заявку не знайдено");
+        var enrollment = enrollments.FindById(id) ?? throw new ResourceNotFoundException("Заявку не знайдено");
         if (enrollment.Status != EnrollmentStatus.Enrolled) throw new EnrollmentRejectedException("Зміна статусу заборонена");
         return enrollment;
     }

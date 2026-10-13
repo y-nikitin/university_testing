@@ -1,31 +1,38 @@
 package ua.course.store;
+
 import java.sql.*;
-import java.util.Objects;
+import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+
+@Repository
 public class ProductRepository {
-    private final Connection connection;
-    public ProductRepository(Connection connection) { this.connection = Objects.requireNonNull(connection); }
+    private final JdbcTemplate jdbc;
+
+    @Autowired
+    public ProductRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    // Сумісність із попередніми тестами: з’єднання закриває його власник.
+    public ProductRepository(Connection connection) {
+        this(new JdbcTemplate(new SingleConnectionDataSource(connection, true)));
+    }
+
     public Product create(Product product) throws SQLException {
-        try (var query = connection.prepareStatement("INSERT INTO products(sku,unit_price,stock,on_sale) VALUES (?,?,?,?) RETURNING id")) {
-            bind(query, product);
-            try (var result = query.executeQuery()) { result.next(); return new Product(result.getLong(1),product.sku(),product.unitPrice(),product.stock(),product.onSale()); }
-        }
+        return jdbc.queryForObject("INSERT INTO products(sku,unit_price,stock,on_sale) VALUES (?,?,?,?) RETURNING *",
+                (r, index) -> map(r), product.sku(), product.unitPrice(), product.stock(), product.onSale());
     }
     public Product findById(long id) throws SQLException {
-        try (var query = connection.prepareStatement("SELECT * FROM products WHERE id=?")) {
-            query.setLong(1,id);
-            try (var result = query.executeQuery()) { return result.next() ? new Product(result.getLong("id"),result.getString("sku"),result.getLong("unit_price"),result.getInt("stock"),result.getBoolean("on_sale")) : null; }
-        }
+        return jdbc.query("SELECT * FROM products WHERE id=?", (r, index) -> map(r), id).stream().findFirst().orElse(null);
     }
     public void update(Product product) throws SQLException {
-        try (var query = connection.prepareStatement("UPDATE products SET sku=?,unit_price=?,stock=?,on_sale=? WHERE id=?")) {
-            bind(query,product); query.setLong(5,product.id());
-            if (query.executeUpdate()==0) throw new IllegalArgumentException("Товар не знайдено");
-        }
+        if (jdbc.update("UPDATE products SET sku=?,unit_price=?,stock=?,on_sale=? WHERE id=?",
+                product.sku(), product.unitPrice(), product.stock(), product.onSale(), product.id()) == 0)
+            throw new ResourceNotFoundException("Товар не знайдено");
     }
-    public void delete(long id) throws SQLException {
-        try (var query = connection.prepareStatement("DELETE FROM products WHERE id=?")) { query.setLong(1,id); query.executeUpdate(); }
-    }
-    private void bind(PreparedStatement query, Product product) throws SQLException {
-        query.setString(1,product.sku()); query.setLong(2,product.unitPrice()); query.setInt(3,product.stock()); query.setBoolean(4,product.onSale());
+    public void delete(long id) throws SQLException { jdbc.update("DELETE FROM products WHERE id=?", id); }
+
+    private Product map(ResultSet r) throws SQLException {
+        return new Product(r.getLong("id"), r.getString("sku"), r.getLong("unit_price"), r.getInt("stock"), r.getBoolean("on_sale"));
     }
 }

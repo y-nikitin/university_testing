@@ -2,6 +2,10 @@ from dataclasses import replace
 from .models import RentalRequest, RentalItem, RentalOrder, RentalStatus
 from .ports import EquipmentRepository, RentalRepository, RentalPolicy
 
+class ResourceNotFoundError(ValueError):
+    pass
+
+
 class RentalRejectedError(Exception):
     pass
 
@@ -47,7 +51,7 @@ class RentalService:
         validate(100, request.quantity, request.days, request.premium)
         equipment = self.equipment.find_by_id(request.equipment_id)
         if equipment is None:
-            raise ValueError("Обладнання не знайдено")
+            raise ResourceNotFoundError("Обладнання не знайдено")
         if request.quantity > equipment.stock:
             raise RentalRejectedError("Недостатньо обладнання")
         if not self.is_rental_allowed(equipment.daily_rate, request.quantity, request.days, request.premium):
@@ -66,7 +70,7 @@ class RentalService:
         integer(overdue_days, 0, 36500)
         rental = self.rentals.find_by_id(rental_id)
         if rental is None:
-            raise ValueError("Оренду не знайдено")
+            raise ResourceNotFoundError("Оренду не знайдено")
         if rental.status == RentalStatus.RETURNED:
             raise RentalRejectedError("Оренду вже повернено")
         fee = self.calculate_late_fee(rental.item.daily_rate, rental.item.quantity, rental.days, overdue_days, rental.premium)

@@ -1,21 +1,32 @@
 package ua.course.courses;
+
 import java.sql.*;
-import java.util.Objects;
+import java.util.List;
+import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+
+@Repository
 public class CourseRepository {
-    private final Connection connection;
-    public CourseRepository(Connection connection) { this.connection=Objects.requireNonNull(connection); }
+    private final JdbcTemplate jdbc;
+    @Autowired
+    public CourseRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    // З’єднання закриває його власник.
+    public CourseRepository(Connection connection) {
+        this.jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+    }
     public Course create(Course item) throws SQLException {
-        try(var q=Sql.command(connection,"INSERT INTO courses(code,price,capacity,level) VALUES (?,?,?,?) RETURNING id,code,price,capacity,level",item.code(),item.price(),item.capacity(),item.level());var r=q.executeQuery()) { r.next();return new Course(r.getLong(1),r.getString(2),r.getLong(3),r.getInt(4),r.getInt(5)); }
+        long id = jdbc.queryForObject("INSERT INTO courses(code,price,capacity,level) VALUES (?,?,?,?) RETURNING id", Long.class, item.code(),item.price(),item.capacity(),item.level());
+        return new Course(id, item.code(),item.price(),item.capacity(),item.level());
     }
     public Course findById(long id) throws SQLException {
-        try(var q=Sql.command(connection,"SELECT id,code,price,capacity,level FROM courses WHERE id=?",id);var r=q.executeQuery()) { return r.next()?new Course(r.getLong(1),r.getString(2),r.getLong(3),r.getInt(4),r.getInt(5)):null; }
+        return jdbc.query("SELECT id,code,price,capacity,level FROM courses WHERE id=?",
+                (r, index) -> new Course(r.getLong(1),r.getString(2),r.getLong(3),r.getInt(4),r.getInt(5)), id).stream().findFirst().orElse(null);
     }
     public void update(Course item) throws SQLException {
-        try(var q=Sql.command(connection,"UPDATE courses SET code=?,price=?,capacity=?,level=? WHERE id=?",item.code(),item.price(),item.capacity(),item.level(),item.id())) {
-            if(q.executeUpdate()==0) throw new IllegalArgumentException("Курс не знайдено");
-        }
+        if (jdbc.update("UPDATE courses SET code=?,price=?,capacity=?,level=? WHERE id=?", item.code(),item.price(),item.capacity(),item.level(),item.id()) == 0)
+            throw new ResourceNotFoundException("Курс не знайдено");
     }
-    public void delete(long id) throws SQLException {
-        try(var q=Sql.command(connection,"DELETE FROM courses WHERE id=?",id)) { q.executeUpdate(); }
-    }
+    public void delete(long id) throws SQLException { jdbc.update("DELETE FROM courses WHERE id=?", id); }
 }

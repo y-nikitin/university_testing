@@ -2,6 +2,9 @@ from dataclasses import replace
 from .models import ShipmentRequest, Shipment, ShipmentStatus
 from .ports import CustomerRepository, ParcelRepository, ShipmentRepository, ShippingPolicy
 
+class ResourceNotFoundError(ValueError):
+    pass
+
 class ShipmentRejectedError(Exception):
     pass
 
@@ -37,10 +40,10 @@ class ShippingService:
             boolean(value)
         customer = self.customers.find_by_id(request.customer_id)
         if customer is None:
-            raise ValueError("Клієнта не знайдено")
+            raise ResourceNotFoundError("Клієнта не знайдено")
         parcel = self.parcels.find_by_id(request.parcel_id)
         if parcel is None:
-            raise ValueError("Посилку не знайдено")
+            raise ResourceNotFoundError("Посилку не знайдено")
         integer(parcel.declared_value, 0, 100000000)
         boolean(customer.regular)
         base_fee = self.calculate_base_fee(parcel.weight_grams, request.distance_km)
@@ -67,7 +70,7 @@ class ShippingService:
         integer(shipment_id, 1, 2**63 - 1)
         shipment = self.shipments.find_by_id(shipment_id)
         if shipment is None:
-            raise ValueError("Відправлення не знайдено")
+            raise ResourceNotFoundError("Відправлення не знайдено")
         if shipment.status != expected:
             raise ShipmentRejectedError("Перехід статусу заборонений")
         self.shipments.update_status(shipment_id, expected, next_status)

@@ -1,21 +1,32 @@
 package ua.course.courses;
+
 import java.sql.*;
-import java.util.Objects;
+import java.util.List;
+import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+
+@Repository
 public class StudentRepository {
-    private final Connection connection;
-    public StudentRepository(Connection connection) { this.connection=Objects.requireNonNull(connection); }
+    private final JdbcTemplate jdbc;
+    @Autowired
+    public StudentRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    // З’єднання закриває його власник.
+    public StudentRepository(Connection connection) {
+        this.jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+    }
     public Student create(Student item) throws SQLException {
-        try(var q=Sql.command(connection,"INSERT INTO students(code,age,entry_score,regular) VALUES (?,?,?,?) RETURNING id,code,age,entry_score,regular",item.code(),item.age(),item.entryScore(),item.regular());var r=q.executeQuery()) { r.next();return new Student(r.getLong(1),r.getString(2),r.getInt(3),r.getInt(4),r.getBoolean(5)); }
+        long id = jdbc.queryForObject("INSERT INTO students(code,age,entry_score,regular) VALUES (?,?,?,?) RETURNING id", Long.class, item.code(),item.age(),item.entryScore(),item.regular());
+        return new Student(id, item.code(),item.age(),item.entryScore(),item.regular());
     }
     public Student findById(long id) throws SQLException {
-        try(var q=Sql.command(connection,"SELECT id,code,age,entry_score,regular FROM students WHERE id=?",id);var r=q.executeQuery()) { return r.next()?new Student(r.getLong(1),r.getString(2),r.getInt(3),r.getInt(4),r.getBoolean(5)):null; }
+        return jdbc.query("SELECT id,code,age,entry_score,regular FROM students WHERE id=?",
+                (r, index) -> new Student(r.getLong(1),r.getString(2),r.getInt(3),r.getInt(4),r.getBoolean(5)), id).stream().findFirst().orElse(null);
     }
     public void update(Student item) throws SQLException {
-        try(var q=Sql.command(connection,"UPDATE students SET code=?,age=?,entry_score=?,regular=? WHERE id=?",item.code(),item.age(),item.entryScore(),item.regular(),item.id())) {
-            if(q.executeUpdate()==0) throw new IllegalArgumentException("Слухача не знайдено");
-        }
+        if (jdbc.update("UPDATE students SET code=?,age=?,entry_score=?,regular=? WHERE id=?", item.code(),item.age(),item.entryScore(),item.regular(),item.id()) == 0)
+            throw new ResourceNotFoundException("Слухача не знайдено");
     }
-    public void delete(long id) throws SQLException {
-        try(var q=Sql.command(connection,"DELETE FROM students WHERE id=?",id)) { q.executeUpdate(); }
-    }
+    public void delete(long id) throws SQLException { jdbc.update("DELETE FROM students WHERE id=?", id); }
 }

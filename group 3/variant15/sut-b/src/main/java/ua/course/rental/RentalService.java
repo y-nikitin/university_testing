@@ -1,6 +1,7 @@
 package ua.course.rental;
 import java.sql.SQLException;
 import java.util.Objects;
+@org.springframework.stereotype.Service
 public class RentalService {
     private final EquipmentRepository equipment;
     private final RentalRepository rentals;
@@ -22,7 +23,7 @@ public class RentalService {
             throw new IllegalArgumentException("Некоректна заявка");
         validate(request.quantity(),request.days());
         var item=equipment.findById(request.equipmentId());
-        if (item==null) throw new IllegalArgumentException("Обладнання не знайдено");
+        if (item==null) throw new ResourceNotFoundException("Обладнання не знайдено");
         if (request.quantity()>item.stock()) throw new RentalRejectedException("Недостатньо обладнання");
         if (!isRentalAllowed(item.dailyRate(),request.quantity(),request.days(),request.premium())) throw new RentalRejectedException("Персональні умови оренди не виконані");
         if (!policy.isAllowed(item,request.quantity(),request.days())) throw new RentalRejectedException("Оренду не дозволено");
@@ -33,7 +34,7 @@ public class RentalService {
     public RentalOrder returnRental(long id) throws SQLException {
         if (id<=0) throw new IllegalArgumentException("Некоректний ідентифікатор");
         var rental=rentals.findById(id);
-        if (rental==null) throw new IllegalArgumentException("Оренду не знайдено");
+        if (rental==null) throw new ResourceNotFoundException("Оренду не знайдено");
         if (rental.status()==RentalStatus.Returned) throw new RentalRejectedException("Оренду вже повернено");
         rentals.markReturned(id,0);
         return new RentalOrder(rental.id(),rental.reference(),rental.days(),rental.premium(),rental.total(),0,RentalStatus.Returned,rental.item());

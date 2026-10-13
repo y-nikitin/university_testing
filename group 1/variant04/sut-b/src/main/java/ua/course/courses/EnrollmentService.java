@@ -1,6 +1,7 @@
 package ua.course.courses;
 import java.sql.SQLException;
 import java.util.Objects;
+@org.springframework.stereotype.Service
 public class EnrollmentService {
     private final StudentRepository students;
     private final CourseRepository courses;
@@ -27,9 +28,9 @@ public class EnrollmentService {
         if(request==null || request.reference()==null || request.reference().isBlank() || request.reference().length()>40 || request.studentId()<=0 || request.courseId()<=0)
             throw new IllegalArgumentException("Некоректна заявка");
         var student=students.findById(request.studentId());
-        if(student==null) throw new IllegalArgumentException("Слухача не знайдено");
+        if(student==null) throw new ResourceNotFoundException("Слухача не знайдено");
         var course=courses.findById(request.courseId());
-        if(course==null) throw new IllegalArgumentException("Курс не знайдено");
+        if(course==null) throw new ResourceNotFoundException("Курс не знайдено");
         if(course.capacity()<1 || course.capacity()>100) throw new IllegalArgumentException("Некоректна місткість");
         long total=calculateTotal(course.price(),student.regular(),request.couponValid());
         if(enrollments.hasEnrollment(student.id(),course.id())) throw new EnrollmentRejectedException("Слухача вже зараховано або він завершив курс");
@@ -53,7 +54,7 @@ public class EnrollmentService {
     private Enrollment active(long id) throws SQLException {
         if(id<=0) throw new IllegalArgumentException("Некоректний ідентифікатор");
         var e=enrollments.findById(id);
-        if(e==null) throw new IllegalArgumentException("Заявку не знайдено");
+        if(e==null) throw new ResourceNotFoundException("Заявку не знайдено");
         if(e.status()!=EnrollmentStatus.Enrolled) throw new EnrollmentRejectedException("Зміна статусу заборонена");
         return e;
     }

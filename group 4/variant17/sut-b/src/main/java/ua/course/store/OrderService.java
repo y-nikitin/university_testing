@@ -1,6 +1,7 @@
 package ua.course.store;
 import java.sql.SQLException;
 import java.util.Objects;
+@org.springframework.stereotype.Service
 public class OrderService {
     private final ProductRepository products;
     private final OrderRepository orders;
@@ -23,7 +24,7 @@ public class OrderService {
             throw new IllegalArgumentException("Некоректна заявка");
         validateQuantity(request.quantity());
         var product=products.findById(request.productId());
-        if (product==null) throw new IllegalArgumentException("Товар не знайдено");
+        if (product==null) throw new ResourceNotFoundException("Товар не знайдено");
         if (request.quantity()>product.stock()) throw new OrderRejectedException("Недостатньо товару");
         if (!policy.isAllowed(product,request.quantity())) throw new OrderRejectedException("Оформлення не дозволено");
         long total=calculateTotal(product.unitPrice(),request.quantity(),request.premium(),request.couponValid(),product.onSale());
@@ -33,7 +34,7 @@ public class OrderService {
     public Order returnOrder(long id) throws SQLException {
         if (id<=0) throw new IllegalArgumentException("Некоректний ідентифікатор");
         var order=orders.findById(id);
-        if (order==null) throw new IllegalArgumentException("Замовлення не знайдено");
+        if (order==null) throw new ResourceNotFoundException("Замовлення не знайдено");
         if (order.status()==OrderStatus.RETURNED) throw new OrderRejectedException("Замовлення вже повернено");
         orders.updateStatus(id,OrderStatus.RETURNED);
         return new Order(order.id(),order.reference(),order.premium(),order.couponValid(),order.total(),OrderStatus.RETURNED,order.item());

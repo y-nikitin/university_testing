@@ -3,6 +3,10 @@ from .models import Order, OrderItem, OrderRequest, OrderStatus
 from .ports import ProductRepository, OrderRepository, CouponValidator
 
 
+class ResourceNotFoundError(ValueError):
+    pass
+
+
 class OrderRejectedError(Exception):
     pass
 
@@ -38,7 +42,7 @@ class OrderService:
             raise ValueError("Ознаки мають бути логічними")
         product = self.products.find_by_id(request.product_id)
         if product is None:
-            raise ValueError("Товар не знайдено")
+            raise ResourceNotFoundError("Товар не знайдено")
         limit = 8 if request.premium else 4
         if request.quantity > limit:
             raise OrderRejectedError("Перевищено ліміт кількості")
@@ -61,7 +65,7 @@ class OrderService:
             raise ValueError("Ознака пакування має бути логічною")
         order = self.orders.find_by_id(order_id)
         if order is None:
-            raise ValueError("Замовлення не знайдено")
+            raise ResourceNotFoundError("Замовлення не знайдено")
         if order.status == OrderStatus.RETURNED:
             raise OrderRejectedError("Замовлення вже повернено")
         if days_since_purchase > 7 or order.item.on_sale:

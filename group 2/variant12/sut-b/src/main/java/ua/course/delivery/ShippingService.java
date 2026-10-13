@@ -1,6 +1,7 @@
 package ua.course.delivery;
 import java.sql.SQLException;
 import java.util.Objects;
+@org.springframework.stereotype.Service
 public class ShippingService {
     private final CustomerRepository customers;
     private final ParcelRepository parcels;
@@ -31,9 +32,9 @@ public class ShippingService {
             throw new IllegalArgumentException("Некоректна заявка");
         if(request.distanceKm()<1 || request.distanceKm()>5000) throw new IllegalArgumentException("Некоректна відстань");
         var customer=customers.findById(request.customerId());
-        if(customer==null) throw new IllegalArgumentException("Клієнта не знайдено");
+        if(customer==null) throw new ResourceNotFoundException("Клієнта не знайдено");
         var parcel=parcels.findById(request.parcelId());
-        if(parcel==null) throw new IllegalArgumentException("Посилку не знайдено");
+        if(parcel==null) throw new ResourceNotFoundException("Посилку не знайдено");
         if(parcel.declaredValue()<0 || parcel.declaredValue()>100000000) throw new IllegalArgumentException("Некоректна оголошена вартість");
         long baseFee=calculateBaseFee(parcel.weightGrams(),request.distanceKm());
 
@@ -59,7 +60,7 @@ public class ShippingService {
     private Shipment find(long id) throws SQLException {
         if(id<=0) throw new IllegalArgumentException("Некоректний ідентифікатор");
         var shipment=shipments.findById(id);
-        if(shipment==null) throw new IllegalArgumentException("Відправлення не знайдено");
+        if(shipment==null) throw new ResourceNotFoundException("Відправлення не знайдено");
         return shipment;
     }
     private Shipment withStatus(Shipment s,ShipmentStatus status,long refund) {

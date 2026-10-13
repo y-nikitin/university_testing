@@ -1,6 +1,7 @@
 "use strict";
 const { Shipment, ShipmentRequest, ShipmentStatus } = require("./models");
 const { integer, boolean, dimensions, ShipmentRejectedError } = require("./validation");
+class ResourceNotFoundError extends RangeError {}
 class ShippingService {
     constructor(customers, parcels, shipments, policy) {
         if (!customers || !parcels || !shipments || !policy) throw new TypeError("Усі залежності обов'язкові");
@@ -25,9 +26,9 @@ class ShippingService {
         integer(request.customerId, 1, Number.MAX_SAFE_INTEGER); integer(request.parcelId, 1, Number.MAX_SAFE_INTEGER);
         integer(request.distanceKm, 1, 5000); boolean(request.urgent); boolean(request.pickup);
         const customer = await this.customers.findById(request.customerId);
-        if (!customer) throw new RangeError("Клієнта не знайдено");
+        if (!customer) throw new ResourceNotFoundError("Клієнта не знайдено");
         const parcel = await this.parcels.findById(request.parcelId);
-        if (!parcel) throw new RangeError("Посилку не знайдено");
+        if (!parcel) throw new ResourceNotFoundError("Посилку не знайдено");
         boolean(customer.regular); integer(parcel.declaredValue, 0, 100000000);
         dimensions(parcel.lengthCm, parcel.widthCm, parcel.heightCm);
         const baseFee = this.calculateBaseFee(parcel.weightGrams, request.distanceKm);
@@ -50,11 +51,11 @@ class ShippingService {
     async changeStatus(id, expected, next) {
         integer(id, 1, Number.MAX_SAFE_INTEGER);
         const shipment = await this.shipments.findById(id);
-        if (!shipment) throw new RangeError("Відправлення не знайдено");
+        if (!shipment) throw new ResourceNotFoundError("Відправлення не знайдено");
         if (shipment.status !== expected) throw new ShipmentRejectedError("Перехід статусу заборонений");
         const refund = next === ShipmentStatus.CANCELLED ? this.calculateRefund(shipment.total) : shipment.refund;
         await this.shipments.updateStatus(id, expected, next, refund);
         return new Shipment({ ...shipment, status: next, refund });
     }
 }
-module.exports = { ShippingService, ShipmentRejectedError };
+module.exports = { ShippingService, ShipmentRejectedError, ResourceNotFoundError };

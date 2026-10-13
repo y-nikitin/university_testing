@@ -1,31 +1,42 @@
 package ua.course.rental;
+
 import java.sql.*;
-import java.util.Objects;
+import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+
+@Repository
 public class EquipmentRepository {
-    private final Connection connection;
-    public EquipmentRepository(Connection connection) { this.connection=Objects.requireNonNull(connection); }
+    private final JdbcTemplate jdbc;
+
+    @Autowired
+    public EquipmentRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    // З’єднання закриває його власник.
+    public EquipmentRepository(Connection connection) {
+        this.jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+    }
+
     public Equipment create(Equipment item) throws SQLException {
-        try (var query=connection.prepareStatement("INSERT INTO equipment(code,daily_rate,stock) VALUES (?,?,?) RETURNING id")) {
-            bind(query,item);
-            try (var result=query.executeQuery()) { result.next(); return new Equipment(result.getLong(1),item.code(),item.dailyRate(),item.stock()); }
-        }
+        long id = jdbc.queryForObject("INSERT INTO equipment(code,daily_rate,stock) VALUES (?,?,?) RETURNING id",
+                Long.class, item.code(), item.dailyRate(), item.stock());
+        return new Equipment(id, item.code(), item.dailyRate(), item.stock());
     }
+
     public Equipment findById(long id) throws SQLException {
-        try (var query=connection.prepareStatement("SELECT id,code,daily_rate,stock FROM equipment WHERE id=?")) {
-            query.setLong(1,id);
-            try (var r=query.executeQuery()) { return r.next()?new Equipment(r.getLong(1),r.getString(2),r.getLong(3),r.getInt(4)):null; }
-        }
+        return jdbc.query("SELECT id,code,daily_rate,stock FROM equipment WHERE id=?",
+                (r, index) -> new Equipment(r.getLong("id"), r.getString("code"), r.getLong("daily_rate"), r.getInt("stock")),
+                id).stream().findFirst().orElse(null);
     }
+
     public void update(Equipment item) throws SQLException {
-        try (var query=connection.prepareStatement("UPDATE equipment SET code=?,daily_rate=?,stock=? WHERE id=?")) {
-            bind(query,item);query.setLong(4,item.id());
-            if (query.executeUpdate()==0) throw new IllegalArgumentException("Обладнання не знайдено");
-        }
+        if (jdbc.update("UPDATE equipment SET code=?,daily_rate=?,stock=? WHERE id=?",
+                item.code(), item.dailyRate(), item.stock(), item.id()) == 0)
+            throw new ResourceNotFoundException("Обладнання не знайдено");
     }
+
     public void delete(long id) throws SQLException {
-        try (var query=connection.prepareStatement("DELETE FROM equipment WHERE id=?")) { query.setLong(1,id);query.executeUpdate(); }
-    }
-    private void bind(PreparedStatement query,Equipment item) throws SQLException {
-        query.setString(1,item.code());query.setLong(2,item.dailyRate());query.setInt(3,item.stock());
+        jdbc.update("DELETE FROM equipment WHERE id=?", id);
     }
 }

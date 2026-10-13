@@ -28,8 +28,8 @@ public class ShippingService {
         if (request == null || string.IsNullOrWhiteSpace(request.Reference) || request.Reference.Length > 40 || request.CustomerId <= 0 || request.ParcelId <= 0)
             throw new ArgumentException("Некоректна заявка");
         if (request.DistanceKm < 1 || request.DistanceKm > 5000) throw new ArgumentOutOfRangeException(nameof(request.DistanceKm));
-        var customer = customers.FindById(request.CustomerId) ?? throw new ArgumentException("Клієнта не знайдено");
-        var parcel = parcels.FindById(request.ParcelId) ?? throw new ArgumentException("Посилку не знайдено");
+        var customer = customers.FindById(request.CustomerId) ?? throw new ResourceNotFoundException("Клієнта не знайдено");
+        var parcel = parcels.FindById(request.ParcelId) ?? throw new ResourceNotFoundException("Посилку не знайдено");
         if (parcel.DeclaredValue < 0 || parcel.DeclaredValue > 100000000) throw new ArgumentException("Некоректна оголошена вартість");
         long baseFee = CalculateBaseFee(parcel.WeightGrams, request.DistanceKm);
         if (!policy.IsAllowed(customer, parcel, request.DistanceKm)) throw new ShipmentRejectedException("Доставку не дозволено");
@@ -43,7 +43,7 @@ public class ShippingService {
     public Shipment Cancel(long id) => ChangeStatus(id, ShipmentStatus.Registered, ShipmentStatus.Cancelled);
     private Shipment ChangeStatus(long id, ShipmentStatus expected, ShipmentStatus next) {
         if (id <= 0) throw new ArgumentOutOfRangeException(nameof(id));
-        var shipment = shipments.FindById(id) ?? throw new ArgumentException("Відправлення не знайдено");
+        var shipment = shipments.FindById(id) ?? throw new ResourceNotFoundException("Відправлення не знайдено");
         if (shipment.Status != expected) throw new ShipmentRejectedException("Перехід статусу заборонений");
         shipments.UpdateStatus(id, expected, next);
         return shipment with { Status = next };

@@ -3,6 +3,10 @@ from datetime import date
 from .models import Booking, BookingItem, BookingRequest, BookingStatus
 from .ports import RoomRepository, BookingRepository, BookingPolicy
 
+class ResourceNotFoundError(ValueError):
+    pass
+
+
 class BookingRejectedError(Exception):
     pass
 
@@ -47,7 +51,7 @@ class BookingService:
         integer(nights, 1, 30)
         room = self.rooms.find_by_id(request.room_id)
         if room is None:
-            raise ValueError("Номер не знайдено")
+            raise ResourceNotFoundError("Номер не знайдено")
         if request.guests > room.capacity:
             raise BookingRejectedError("Перевищено місткість номера")
         if not self.bookings.is_available(room.id, request.check_in, request.check_out):
@@ -67,7 +71,7 @@ class BookingService:
         integer(days_before, 0, 36500)
         booking = self.bookings.find_by_id(booking_id)
         if booking is None:
-            raise ValueError("Бронювання не знайдено")
+            raise ResourceNotFoundError("Бронювання не знайдено")
         if booking.status == BookingStatus.CANCELLED:
             raise BookingRejectedError("Бронювання вже скасовано")
         refund = self.calculate_refund(booking.prepaid, days_before)
