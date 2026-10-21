@@ -68,6 +68,12 @@
             <version>3.13.1</version>
             <scope>test</scope>
         </dependency>
+        <!-- Лекція про flaky-тести. -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <testResources>
