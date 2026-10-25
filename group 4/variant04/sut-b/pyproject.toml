@@ -10,6 +10,7 @@ dependencies = ["psycopg[binary]>=3.2,<4", "fastapi>=0.118,<1", "uvicorn>=0.34,<
 
 [project.optional-dependencies]
 test = ["pytest>=8,<9"]
+regression = ["pytest>=8,<9", "testcontainers[postgres]>=4.8,<5"]
 
 [tool.setuptools.packages.find]
 include = ["store*"]

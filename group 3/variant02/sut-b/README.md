@@ -1,12 +1,12 @@
 # SUT B — Прокат обладнання
 
-Java 21, Maven, PostgreSQL 17, JDBC, JUnit 5 та Mockito. Варіант 02 із персональним правилом.
+Go 1.24+, PostgreSQL 17, pgx. Варіант 02 із персональним правилом.
 
 ## Поведінка
 
 Обладнання має унікальний непорожній код до 40 символів, добову ціну 100–1 000 000 копійок та невід’ємний залишок. Одна оренда містить один вид обладнання: 1–20 одиниць на 1–30 днів включно. Код оренди унікальний, непорожній, до 40 символів; ідентифікатор обладнання додатний.
 
-Оформлення перевіряє заявку, існування обладнання та достатність залишку. Потім один раз викликає RentalPolicy.isAllowed(equipment, quantity, days). False або виняток припиняє оформлення без запису. Успіх атомарно створює оренду Active і позицію зі знімком добової ціни.
+Оформлення перевіряє заявку, існування обладнання та достатність залишку. Потім один раз викликає RentalPolicy.IsAllowed(ctx, equipment, quantity, days). false або помилка припиняє оформлення без запису. Успіх атомарно створює оренду Active і позицію зі знімком добової ціни.
 
 Початкова сума — добова ціна × кількість × дні у цілих копійках. Персональне правило нижче визначає знижку, заставу, доплату або дозвіл. Інших знижок чи доплат немає. Преміальність фіксується при оформленні. Подальші зміни обладнання не змінюють збереженої оренди. Залишок перевіряється, але оформлення й повернення його не змінюють.
 
@@ -16,29 +16,25 @@ Java 21, Maven, PostgreSQL 17, JDBC, JUnit 5 та Mockito. Варіант 02 і�
 
 7% від 7 днів, 15% від 14 днів. Застосовується лише більша знижка.
 
-`calculateTotal(dailyRate, quantity, days, premium)`; коротка форма без premium використовує false. Оформлення зберігає суму після знижки.
+`CalculateTotal(dailyRate, quantity, days, premium)`. Оформлення зберігає суму після знижки.
 
 Усі межі включні, якщо явно не зазначено «менше». Відсотки рахуються від суми до знижок. Загальна сума знижки, застави чи доплати округлюється донизу до цілої копійки один раз; потім застосовується мінімум або максимум. Загальні межі кількості 1–20 і тривалості 1–30 діють завжди.
 
-## API
+## Компоненти
 
-`RentalService(equipment, rentals, policy)`:
+`NewRentalService(equipment, rentals, policy)` отримує інтерфейси репозиторіїв і політики. Операції: `Rent(ctx, request)`, `ReturnRental(ctx, id)`, `CalculateTotal(dailyRate, quantity, days, premium)`.
 
-- `calculateTotal(dailyRate, quantity, days)` — початкова сума;
-- `rent(new RentalRequest(reference, equipmentId, quantity, days, premium))` — оформлення;
-- `returnRental(id)` — повернення.
+`PostgresEquipmentRepository`: Create, FindByID, Update, Delete.
+`PostgresRentalRepository`: Create, FindByID, FindRentals, MarkReturned, Delete.
+Обидва отримують пул pgxpool через поле DB. Створення оренди та її позиції виконується в одній транзакції.
 
-Некоректні входи та відсутні записи — IllegalArgumentException; бізнес-відмови — RentalRejectedException. Помилки БД передаються як SQLException.
+Create ігнорує вхідні ідентифікатори. FindByID повертає ErrNotFound за відсутності запису. FindRentals застосовує фільтри обладнання та статусу одночасно і сортує за id. Видалення відсутнього запису нічого не змінює. Видалення оренди каскадно видаляє позицію; обладнання з позиціями видалити не можна.
 
-EquipmentRepository(connection): create(Equipment), findById, update(Equipment), delete. RentalRepository(connection): create(RentalOrder), findById, findRentals(equipmentId, status), markReturned(id, lateFee), delete.
-
-create повертає модель з ідентифікаторами БД, ігноруючи вхідні id. findById повертає null за відсутності запису. findRentals застосовує обидва фільтри одночасно та впорядковує результати за id. update відсутнього обладнання — IllegalArgumentException; markReturned відсутньої чи повернутої оренди — RentalRejectedException. Видалення відсутнього запису нічого не змінює. Видалення оренди каскадно видаляє позицію; обладнання з позиціями видалити не можна.
-
-Репозиторії отримують відкрите JDBC-з’єднання, яке власник закриває через try-with-resources. create оренди потребує autoCommit=true та використовує власну транзакцію. Не обгортайте його в зовнішню транзакцію і не використовуйте з’єднання паралельно. Репозиторії можна підміняти через Mockito або підкласи; RentalPolicy — через Stub/Mock чи лямбду. Для перевірки через HTTP доступна реалізація HttpRentalPolicy.
+Помилки сервісу: ErrInvalid, ErrNotFound, ErrConflict, ErrPolicy; перевіряйте їх через errors.Is. Помилки БД передаються виклику. Інтерфейси можна замінювати власними Stub, Mock або Fake; PolicyFunc адаптує функцію до інтерфейсу політики.
 
 ## Підготовка та запуск
 
-Створіть навчального користувача (один раз) і окрему БД у локальній PostgreSQL:
+Створіть окрему навчальну БД і застосуйте міграцію до порожньої БД:
 
 ```sql
 CREATE ROLE rental_student LOGIN;
@@ -46,48 +42,47 @@ CREATE ROLE rental_student LOGIN;
 CREATE DATABASE rental_variant02_test OWNER rental_student;
 ```
 
-Із папки sut-b застосуйте міграцію один раз до порожньої БД:
-
 ```sh
 psql -h localhost -U rental_student -d rental_variant02_test -v ON_ERROR_STOP=1 -f migrations/V1__create_tables.sql
+go mod download
+go build ./...
+go run ./cmd/api
 ```
 
-Задайте змінні середовища за .env.example. Файл .env автоматично не читається; пароль задається через DB_PASSWORD.
+Задайте змінні середовища за .env.example. Файл .env автоматично не читається.
+Параметри: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, DB_SSLMODE (типово disable).
+Адреса API: http://127.0.0.1:8080; змінні API_HOST та API_PORT змінюють адресу й порт.
+API не застосовує міграції і не очищає БД автоматично.
+
+## Перевірки
+
+Команди виконуються з папки sut-b:
 
 ```sh
-mvn compile
-mvn test
+go test ./...
+go test -tags=integration -count=1 ./...
+go test -tags=regression -count=1 -v ./...
+go test -tags=regression -shuffle=on -count=1 -v ./...
+go test -tags=regression -run '^TestRentalAmount$' -count=1 -v ./...
 ```
 
-Є лише тест підключення. Дані для бізнес-сценаріїв готуйте у власних тестах. Автоматичного створення або видалення схем немає. Для незалежності тестів очищайте власні оренди перед обладнанням або використовуйте окрему тестову схему.
+Звичайний запуск виконує тести без додаткових тегів. Перевірка integration використовує налаштовану БД.
+Regression потребує запущеного Docker: сам створює контейнер PostgreSQL, застосовує міграції та видаляє контейнер після завершення. Локальна PostgreSQL для нього не потрібна. Для повторного виконання використовуйте -count=1.
 
-## HTTP-політика оренди
+## HTTP-політика
 
-`HttpRentalPolicy` реалізує `RentalPolicy` через HTTP. Адреса й таймаут задаються конструктором:
+`NewHTTPRentalPolicy(baseURL, timeout)` створює адаптер зовнішньої перевірки. Передайте його в NewRentalService або задайте RENTAL_POLICY_URL для API. Без цієї змінної локальна політика дозволяє операцію.
 
-```java
-var policy = new HttpRentalPolicy(URI.create(wiremockUrl), Duration.ofSeconds(2));
-var service = new RentalService(equipmentRepository, rentalRepository, policy);
-```
-
-Потрібні імпорти `java.net.URI` та `java.time.Duration`. `wiremockUrl` — базова HTTP(S)-адреса WireMock без шляху, з фактичним портом контейнера.
-
-Після локальних перевірок сервіс надсилає один `POST /rental-policy` з `Content-Type: application/json`:
+Після локальних перевірок виконується один POST /rental-policy:
 
 ```json
 {"equipmentId":1,"quantity":2,"days":7}
 ```
 
-HTTP 200 із `{"allowed":true}` дозволяє створення оренди та позиції в БД. HTTP 200 із `{"allowed":false}` спричиняє `RentalRejectedException` без записів. Інший статус, некоректний JSON, відсутнє або нелогічне поле `allowed`, мережева помилка чи таймаут спричиняють `IllegalStateException`; записів також немає. Переривання потоку відновлює його ознаку переривання й спричиняє `IllegalStateException`. Перенаправлення вимкнені; адаптер не реалізує повторних спроб.
-
-Локальна відмова до перевірки політики та повернення оренди не викликають HTTP-політику. Персональні знижки залишаються чинними. У тестах перевіряйте збережені дані PostgreSQL та кількість і тіло запитів у журналі WireMock.
-
+Відповідь HTTP 200 із {"allowed":true} дозволяє оренду, із {"allowed":false} — відхиляє без записів у БД. Інший статус, некоректна відповідь, мережева помилка чи таймаут повертають ErrPolicy без записів. Перенаправлення та повторні спроби вимкнені.
+Повернення оренди та локальна відмова не викликають HTTP-політику. Для тестів можна підняти WireMock і перевіряти журнал запитів.
 
 ## REST API
-
-Запуск: `mvn spring-boot:run` або клас `RentalApplication`. Потрібні Java 21 і підготовлена PostgreSQL із застосованими міграціями цього проєкту.
-Адреса: `http://127.0.0.1:8080`; порт змінюється через `API_PORT`.
-Параметри БД: `DB_HOST`, `DB_PORT`, `DB_NAME` (типово `rental_variant02_test`), `DB_USER` (типово `rental_student`), `DB_PASSWORD`.
 
 | Метод | Шлях | Призначення |
 |---|---|---|
@@ -108,6 +103,3 @@ HTTP 200 із `{"allowed":true}` дозволяє створення оренд�
 Помилки мають JSON `{"code":"...","message":"..."}`. Статуси оренди: `Active`, `Returned`.
 
 `RENTAL_POLICY_URL` вмикає наявну зовнішню HTTP-перевірку; без цієї змінної локальна політика дозволяє операцію. Недоступна зовнішня перевірка повертає 502.
-Spring керує залежностями та пулом з’єднань. Репозиторії використовують JdbcTemplate, створення оренди й позиції є однією транзакцією.
-Конструктори з Connection збережені для попередніх тестів; SQL-помилки JdbcTemplate обгортає в DataAccessException.
-API не очищає БД й не застосовує міграції автоматично. Для навчальних сценаріїв виконуйте операції послідовно.

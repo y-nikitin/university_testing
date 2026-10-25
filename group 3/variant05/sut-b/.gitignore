@@ -1,2 +1,6 @@
-target/
 .env
+/api
+/api.exe
+*.test
+coverage.out
+coverage.html
