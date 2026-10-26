@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 import psycopg
 from fastapi import Depends, FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 from .database import connect
@@ -150,3 +152,8 @@ def complete(enrollment_id: int, enrollment_service=Depends(service)):
 @app.post("/enrollments/{enrollment_id}/cancel")
 def cancel(enrollment_id: int, body: CancelInput, enrollment_service=Depends(service)):
     return enrollment_service.cancel(enrollment_id, body.days_before_start)
+
+
+_ui_directory = Path(__file__).resolve().parents[2] / "sut-c-ui"
+if _ui_directory.is_dir():
+    app.mount("/", StaticFiles(directory=str(_ui_directory), html=True), name="ui")

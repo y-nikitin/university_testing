@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 
 import psycopg
 from fastapi import Depends, FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
@@ -140,3 +142,8 @@ def get_rental(rental_id: int, repository=Depends(rentals)):
 @app.post("/rentals/{rental_id}/return")
 def return_rental(rental_id: int, body: ReturnInput, rental_service=Depends(service)):
     return rental_service.return_rental(rental_id, body.overdue_days)
+
+
+_ui_directory = Path(__file__).resolve().parents[2] / "sut-c-ui"
+if _ui_directory.is_dir():
+    app.mount("/", StaticFiles(directory=str(_ui_directory), html=True), name="ui")

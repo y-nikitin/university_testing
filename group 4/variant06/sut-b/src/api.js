@@ -1,5 +1,6 @@
 "use strict";
 const express = require("express");
+const path = require("node:path");
 const { connect } = require("./database");
 const { ProductRepository, OrderRepository } = require("./repositories");
 const { OrderService, OrderRejectedError, ResourceNotFoundError } = require("./service");
@@ -71,6 +72,7 @@ function createApp() {
         app.all(path, (req, res) => res.set("Allow", allow).status(405)
             .json({ code: "METHOD_NOT_ALLOWED", message: "Метод не підтримується" }));
     }
+    app.use(express.static(path.resolve(__dirname, "../../sut-c-ui")));
     app.use((req, res) => res.status(404).json({ code: "NOT_FOUND", message: "Маршрут не знайдено" }));
     app.use((error, req, res, next) => {
         if (res.headersSent) return next(error);

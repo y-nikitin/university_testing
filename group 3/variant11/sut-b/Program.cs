@@ -29,6 +29,13 @@ app.UseStatusCodePages(async context => {
         response.StatusCode == 404 ? "NOT_FOUND" : "METHOD_NOT_ALLOWED",
         response.StatusCode == 404 ? "Маршрут не знайдено" : "Метод не підтримується"));
 });
+var uiDirectory = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "sut-c-ui"));
+if (Directory.Exists(uiDirectory)) {
+    var files = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uiDirectory);
+    app.Lifetime.ApplicationStopped.Register(files.Dispose);
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = files });
+}
 app.MapControllers();
 app.Run();
 

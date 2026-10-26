@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
 from datetime import date
 
 import psycopg
 from fastapi import Depends, FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
@@ -142,3 +144,8 @@ def get_booking(booking_id: int, repository=Depends(bookings)):
 @app.post("/bookings/{booking_id}/cancel")
 def cancel_booking(booking_id: int, body: CancellationInput, booking_service=Depends(service)):
     return booking_service.cancel_booking(booking_id, body.days_before)
+
+
+_ui_directory = Path(__file__).resolve().parents[2] / "sut-c-ui"
+if _ui_directory.is_dir():
+    app.mount("/", StaticFiles(directory=str(_ui_directory), html=True), name="ui")

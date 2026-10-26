@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"io"
 	"net/http"
+ "path/filepath"
 	"strconv"
 )
 
@@ -156,6 +157,14 @@ func NewHandler(e EquipmentRepository, rentals RentalRepository, s *RentalServic
 		writeJSON(w, 200, saved)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        switch r.URL.Path {
+        case "/", "/index.html", "/styles.css", "/app.js":
+            name := r.URL.Path[1:]
+            if name == "" { name = "index.html" }
+            http.ServeFile(w, r, filepath.Join("..", "sut-c-ui", name))
+            return
+        }
+
 		writeJSON(w, 404, APIError{"NOT_FOUND", "Маршрут не знайдено"})
 	})
 	return mux

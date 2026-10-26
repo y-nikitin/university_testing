@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 import psycopg
 from fastapi import Depends, FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 from .database import connect
@@ -152,3 +154,8 @@ def deliver(shipment_id: int, shipping_service=Depends(service)):
 def cancel(shipment_id: int, shipping_service=Depends(service)):
     return shipping_service.cancel(shipment_id)
 
+
+
+_ui_directory = Path(__file__).resolve().parents[2] / "sut-c-ui"
+if _ui_directory.is_dir():
+    app.mount("/", StaticFiles(directory=str(_ui_directory), html=True), name="ui")
