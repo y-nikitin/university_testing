@@ -1,0 +1,8 @@
+{
+  "classification": "Внутрішній експорт. Не призначений для публічного доступу.",
+  "synthetic": true,
+  "guests": [
+    {"name": "Тестова гостя А", "email": "guest-a@example.invalid", "phone": "+000-TEST-001", "privateNote": "Навчальна приватна примітка A"},
+    {"name": "Тестовий гість Б", "email": "guest-b@example.invalid", "phone": "+000-TEST-002", "privateNote": "Навчальна приватна примітка Б"}
+  ]
+}

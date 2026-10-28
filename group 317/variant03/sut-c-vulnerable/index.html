@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="uk">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Готель · Бронювання</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script></head>
+<body>
+<header><span class="brand">ГОТЕЛЬ / ВАРІАНТ 03</span><nav aria-label="Основна навігація"><a href="#create">Нове бронювання</a><a href="#booking">Перегляд бронювання</a><a href="#rooms">Номери</a></nav></header>
+<main><p id="welcome"></p>
+<div class="intro"><p class="eyebrow">БРОНЮВАННЯ ГОТЕЛЮ</p><h1>Сплануйте своє перебування.</h1><p>Передоплата повна. Скасування за 7 і більше днів — повернення 100%, за 2–6 днів — 50%, за 0–1 день — без повернення.</p></div>
+<p id="notice" role="status" aria-live="polite"></p><p id="error" role="alert" hidden></p>
+<section id="create"><div class="heading"><span>01</span><h2>Нове бронювання</h2></div>
+<form id="booking-form" data-testid="booking-form">
+<label>Код бронювання<input name="reference" required maxlength="40" placeholder="Наприклад, STAY-001"></label>
+<label>Ідентифікатор номера<input name="roomId" type="number" required min="1" step="1"></label>
+<div class="row"><label>Дата заїзду<input name="check_in" type="date" required></label><label>Дата виїзду<input name="check_out" type="date" required></label><label>Кількість гостей<input name="guests" type="number" required min="1" max="6" value="1"></label></div>
+<label class="checkbox"><input name="regular" type="checkbox">Постійний клієнт</label><p class="hint">Тривалість перебування — від 1 до 30 ночей. Дата виїзду не входить у зайнятий період.</p><button type="submit">Забронювати</button></form></section>
+<section id="booking"><div class="heading"><span>02</span><h2>Перегляд бронювання</h2></div>
+<form id="lookup-form" class="row"><label>Ідентифікатор бронювання<input name="id" type="number" min="1" required></label><button type="submit">Знайти бронювання</button></form>
+<form id="search-form"><label>Код бронювання для пошуку<input name="reference" required></label><button>Шукати за кодом</button></form><pre id="search-result"></pre><article id="booking-result" data-testid="booking-result" hidden>
+<div class="result-heading"><h3 id="booking-reference"></h3><span id="booking-status" data-testid="booking-status" class="badge"></span></div>
+<dl><dt>Ідентифікатор</dt><dd id="booking-id" data-testid="booking-id"></dd><dt>Номер (ID)</dt><dd id="booking-room"></dd><dt>Дата заїзду</dt><dd id="booking-check-in"></dd><dt>Дата виїзду</dt><dd id="booking-check-out"></dd><dt>Постійний клієнт</dt><dd id="booking-regular"></dd><dt>Гостей</dt><dd id="booking-guests"></dd><dt>Підсумкова сума</dt><dd id="booking-total" data-testid="booking-total" class="total"></dd><dt>Передоплата</dt><dd id="booking-prepaid" data-testid="booking-prepaid"></dd><dt>Повернення коштів</dt><dd id="booking-refund" data-testid="booking-refund"></dd></dl>
+<p class="hint">Сума та статус отримані зі збереженого бронювання. Скасування не видаляє запис.</p>
+<form id="edit-form"><label>Новий код бронювання<input name="reference" required maxlength="40"></label><button>Змінити код</button></form><form id="cancel-form"><label>Днів до заїзду<input name="days_before" type="number" min="0" max="36500" required value="7"></label><p class="hint">Для скасування строк задається вручну; поточна дата не використовується.</p><button id="cancel-booking" type="submit" class="secondary">Скасувати бронювання</button></form>
+</article></section>
+<section id="rooms"><div class="heading"><span>03</span><h2>Номери</h2></div><p class="hint">Створіть номер для бронювання або знайдіть наявний за ідентифікатором.</p>
+<form id="room-form"><label>Номер кімнати<input name="number" maxlength="40" required placeholder="Наприклад, A-101"></label><div class="row"><label>Місткість<input name="capacity" type="number" required min="1" max="6" value="2"></label><label>Ціна за ніч, грн<input name="price" type="number" min="1" max="10000" step="0.01" required value="1000"></label></div><button type="submit">Створити номер</button></form>
+<form id="room-lookup-form" class="row"><label>Ідентифікатор номера для пошуку<input name="id" type="number" min="1" required></label><button type="submit" class="secondary">Знайти номер</button></form>
+<article id="room-result" data-testid="room-result" hidden><h3 id="room-title"></h3><p id="room-info"></p><button id="use-room" type="button" class="secondary">Обрати для бронювання</button></article>
+</section></main></body></html>

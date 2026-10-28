@@ -1,0 +1,25 @@
+BEGIN;
+CREATE TABLE products (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    sku VARCHAR(40) NOT NULL UNIQUE CHECK (length(trim(sku)) > 0),
+    unit_price BIGINT NOT NULL CHECK (unit_price BETWEEN 100 AND 1000000),
+    stock INTEGER NOT NULL CHECK (stock >= 0),
+    on_sale BOOLEAN NOT NULL
+);
+CREATE TABLE orders (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    reference VARCHAR(40) NOT NULL UNIQUE CHECK (length(trim(reference)) > 0),
+    premium BOOLEAN NOT NULL,
+    coupon_valid BOOLEAN NOT NULL,
+    total BIGINT NOT NULL CHECK (total >= 0),
+    status VARCHAR(16) NOT NULL CHECK (status IN ('CONFIRMED', 'RETURNED'))
+);
+CREATE TABLE order_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL CHECK (quantity BETWEEN 1 AND 20),
+    unit_price BIGINT NOT NULL CHECK (unit_price BETWEEN 100 AND 1000000),
+    on_sale BOOLEAN NOT NULL
+);
+COMMIT;

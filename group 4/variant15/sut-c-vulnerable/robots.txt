@@ -1,0 +1,2 @@
+User-agent: *
+Disallow: /assets/customer-export.json

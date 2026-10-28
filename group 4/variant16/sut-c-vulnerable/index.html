@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Магазин · Варіант 16</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script></head>
+<body><header><span class="brand">МАГАЗИН / ВАРІАНТ 16</span><nav aria-label="Основна навігація"><a href="#create">Нове замовлення</a><a href="#order">Перегляд замовлення</a><a href="#products">Товари</a></nav></header>
+<main><p id="welcome"></p><div class="intro"><p class="eyebrow">ІНТЕРНЕТ-МАГАЗИН</p><h1>Ваше замовлення — у деталях.</h1><p>7% від 700 грн; 16% від 2200 грн. Застосовується лише більша знижка.</p></div>
+<p id="notice" role="status" aria-live="polite"></p><p id="error" role="alert" hidden></p>
+<section id="create"><div class="heading"><span>01</span><h2>Нове замовлення</h2></div>
+<form id="order-form" data-testid="order-form"><label>Код замовлення<input name="reference" required maxlength="40" placeholder="ORDER-001"></label>
+<div class="row"><label>Ідентифікатор товару<input name="productId" type="number" min="1" required></label><label>Кількість<input name="quantity" type="number" min="1" max="20" value="1" required></label></div>
+<label class="checkbox"><input name="premium" type="checkbox">Преміальний покупець</label><label class="checkbox"><input name="coupon" type="checkbox">Купон підтверджено</label>
+<button type="submit">Оформити замовлення</button></form></section>
+<section id="order"><div class="heading"><span>02</span><h2>Перегляд замовлення</h2></div>
+<form id="lookup-form" class="row"><label>Ідентифікатор замовлення<input name="id" type="number" min="1" required></label><button type="submit">Знайти замовлення</button></form>
+<form id="search-form"><label>Код замовлення для пошуку<input name="reference" required></label><button>Шукати за кодом</button></form><pre id="search-result"></pre><article id="order-result" data-testid="order-result" hidden><div class="result-heading"><h3 id="order-reference"></h3><span id="order-status" data-testid="order-status" class="badge"></span></div>
+<dl><dt>Ідентифікатор</dt><dd id="order-id" data-testid="order-id"></dd><dt>Товар (ID)</dt><dd id="order-product"></dd><dt>Кількість</dt><dd id="order-quantity"></dd><dt>Ціна одиниці при купівлі</dt><dd id="order-price"></dd><dt>Акційний товар</dt><dd id="order-sale"></dd><dt>Преміальний покупець</dt><dd id="order-premium"></dd><dt>Купон підтверджено</dt><dd id="order-coupon"></dd><dt>Підсумкова сума</dt><dd id="order-total" data-testid="order-total" class="total"></dd></dl>
+<p class="hint">Дані та підсумкова сума завантажені зі збереженого замовлення.</p>
+<form id="edit-form"><label>Новий код замовлення<input name="reference" required maxlength="40"></label><button>Змінити код</button></form><form id="return-form"><button type="submit" class="secondary">Повернути замовлення</button></form></article></section>
+<section id="products"><div class="heading"><span>03</span><h2>Товари</h2></div>
+<form id="product-form"><label>Артикул<input name="sku" maxlength="40" required placeholder="ITEM-001"></label>
+<div class="row"><label>Ціна, грн<input name="price" type="number" min="1" max="10000" step="0.01" value="1000" required></label><label>Залишок<input name="stock" type="number" min="0" max="2147483647" value="20" required></label></div>
+<label class="checkbox"><input name="onSale" type="checkbox">Акційний товар</label><button type="submit">Створити товар</button></form>
+<form id="product-lookup-form" class="row"><label>Ідентифікатор товару для пошуку<input name="id" type="number" min="1" required></label><button type="submit" class="secondary">Знайти товар</button></form>
+<article id="product-result" data-testid="product-result" hidden><h3 id="product-title"></h3><p id="product-info"></p><button id="use-product" type="button" class="secondary">Обрати для замовлення</button></article></section></main></body></html>

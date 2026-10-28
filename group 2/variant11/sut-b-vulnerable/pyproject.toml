@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delivery-variant11"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.118,<1", "uvicorn>=0.34,<1", "psycopg[binary]>=3.2,<4"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9"]
+regression = ["pytest>=8,<9", "testcontainers[postgres]>=4.8,<5"]
+
+[tool.setuptools.packages.find]
+include = ["delivery*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

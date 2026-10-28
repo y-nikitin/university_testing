@@ -1,0 +1,10 @@
+target/
+bin/
+obj/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+/api
+/api.exe

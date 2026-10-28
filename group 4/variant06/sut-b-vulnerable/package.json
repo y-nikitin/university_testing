@@ -1,0 +1,21 @@
+{
+  "name": "store-variant06",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "jest --runInBand",
+    "start": "node src/api.js",
+    "regression": "jest --runInBand --testRegex order[.]regression[.]js$"
+  },
+  "dependencies": {
+    "pg": "^8.13.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@testcontainers/postgresql": "^10.0.0"
+  }
+}

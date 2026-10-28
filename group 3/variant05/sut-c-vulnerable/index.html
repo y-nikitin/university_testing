@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Прокат · Варіант 05</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script></head>
+<body><header><span class="brand">ПРОКАТ / ВАРІАНТ 05</span><nav aria-label="Основна навігація"><a href="#create">Нова оренда</a><a href="#rental">Перегляд оренди</a><a href="#equipment">Обладнання</a></nav></header>
+<main><p id="welcome"></p><div class="intro"><p class="eyebrow">ПРОКАТ ОБЛАДНАННЯ</p><h1>Обладнання для ваших планів.</h1><p>5% за преміальність і 10% від початкової суми 3000 грн. Відсотки додаються: максимум 15%.</p></div>
+<p id="notice" role="status" aria-live="polite"></p><p id="error" role="alert" hidden></p>
+<section id="create"><div class="heading"><span>01</span><h2>Нова оренда</h2></div>
+<form id="rental-form" data-testid="rental-form"><label>Код оренди<input name="reference" required maxlength="40" placeholder="RENT-001"></label>
+<div class="row"><label>Ідентифікатор обладнання<input name="equipmentId" type="number" min="1" required></label><label>Кількість<input name="quantity" type="number" min="1" max="20" value="1" required></label></div>
+<label>Кількість днів<input name="days" type="number" min="1" max="30" value="1" required></label><label class="checkbox"><input name="premium" type="checkbox">Преміальний клієнт</label>
+<button type="submit">Оформити оренду</button></form></section>
+<section id="rental"><div class="heading"><span>02</span><h2>Перегляд оренди</h2></div>
+<form id="lookup-form" class="row"><label>Ідентифікатор оренди<input name="id" type="number" min="1" required></label><button type="submit">Знайти оренду</button></form>
+<form id="search-form"><label>Код оренди для пошуку<input name="reference" required></label><button>Шукати за кодом</button></form><pre id="search-result"></pre><article id="rental-result" data-testid="rental-result" hidden><div class="result-heading"><h3 id="rental-reference"></h3><span id="rental-status" data-testid="rental-status" class="badge"></span></div>
+<dl><dt>Ідентифікатор</dt><dd id="rental-id" data-testid="rental-id"></dd><dt>Обладнання (ID)</dt><dd id="rental-equipment"></dd><dt>Днів оренди</dt><dd id="rental-days"></dd><dt>Кількість</dt><dd id="rental-quantity"></dd><dt>Добова ціна при оформленні</dt><dd id="rental-price"></dd><dt>Преміальний клієнт</dt><dd id="rental-premium"></dd><dt>Підсумкова сума</dt><dd id="rental-total" data-testid="rental-total" class="total"></dd><dt>Доплата за прострочення</dt><dd id="rental-late-fee" data-testid="rental-late-fee"></dd></dl>
+<p class="hint">Дані та підсумкова сума завантажені зі збереженої оренди.</p>
+<form id="edit-form"><label>Новий код оренди<input name="reference" required maxlength="40"></label><button>Змінити код</button></form><form id="return-form"><button type="submit" class="secondary">Повернути обладнання</button></form></article></section>
+<section id="equipment"><div class="heading"><span>03</span><h2>Обладнання</h2></div>
+<form id="equipment-form"><label>Код обладнання<input name="code" maxlength="40" required placeholder="ITEM-001"></label>
+<div class="row"><label>Добова ціна, грн<input name="price" type="number" min="1" max="10000" step="0.01" value="1000" required></label><label>Залишок<input name="stock" type="number" min="0" max="2147483647" value="20" required></label></div>
+<button type="submit">Створити обладнання</button></form>
+<form id="equipment-lookup-form" class="row"><label>Ідентифікатор обладнання для пошуку<input name="id" type="number" min="1" required></label><button type="submit" class="secondary">Знайти обладнання</button></form>
+<article id="equipment-result" data-testid="equipment-result" hidden><h3 id="equipment-title"></h3><p id="equipment-info"></p><button id="use-equipment" type="button" class="secondary">Обрати для оренди</button></article></section></main></body></html>

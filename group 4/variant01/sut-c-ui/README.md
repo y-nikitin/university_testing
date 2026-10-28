@@ -30,3 +30,9 @@ npm start
 Для автоматизації використовуйте підписи полів, назви кнопок та data-testid.
 Сума має data-kopecks, статус — data-status; повідомлення мають role=status і role=alert.
 Кожен сценарій готує власні дані з унікальними кодами. Готових UI-тестів немає.
+
+## Backend
+
+Цей UI використовує сусідній [sut-b](../sut-b/README.md) та його PostgreSQL. Відкриття index.html через file:// не замінює запуск backend.
+
+[Огляд варіанта](../README.md)

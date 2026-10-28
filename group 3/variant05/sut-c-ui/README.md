@@ -30,3 +30,9 @@ go run ./cmd/api
 Для автоматизації доступні підписи полів, назви кнопок, data-testid, role=status та role=alert.
 Суми мають data-kopecks, статус — data-status. Використовуйте власні дані для кожного сценарію.
 Готових UI-тестів немає.
+
+## Backend
+
+Цей UI використовує сусідній [sut-b](../sut-b/README.md) та його PostgreSQL. Відкриття index.html через file:// не замінює запуск backend.
+
+[Огляд варіанта](../README.md)
